@@ -847,6 +847,7 @@
         <option value="anthropic">Anthropic (Claude)</option>
         <option value="openai">OpenAI (GPT)</option>
         <option value="openrouter">OpenRouter (300+ models)</option>
+        <option value="nvidia">NVIDIA NIM (free models)</option>
       </select>
     </div>
 
@@ -872,6 +873,11 @@
     </div>
 
     <div class="key-group">
+      <label>NVIDIA Key <span class="badge" id="badge-nvidia">optional</span></label>
+      <input type="password" id="key-nvidia" placeholder="nvapi-... (free at build.nvidia.com)">
+    </div>
+
+    <div class="key-group">
       <label>AssemblyAI <span class="badge optional">optional</span></label>
       <input type="password" id="key-assemblyai" placeholder="Voice transcription key">
     </div>
@@ -886,7 +892,7 @@
       <span class="saved" id="saved-msg">Saved</span>
     </div>
 
-    <p class="setup-hint">Pick a provider above. You need at least one AI key to get started.</p>
+    <p class="setup-hint">Pick a provider above. You need at least one AI key to get started. NVIDIA and OpenRouter offer free models!</p>
   </div>
 
   <!-- Messages -->
@@ -957,6 +963,7 @@
     const keyAnthropicInput = document.getElementById('key-anthropic');
     const keyOpenaiInput = document.getElementById('key-openai');
     const keyOpenrouterInput = document.getElementById('key-openrouter');
+    const keyNvidiaInput = document.getElementById('key-nvidia');
     const keyAssemblyaiInput = document.getElementById('key-assemblyai');
     const keyElevenlabsInput = document.getElementById('key-elevenlabs');
     const setupProvider = document.getElementById('setup-provider');
@@ -964,6 +971,7 @@
     const badgeAnthropic = document.getElementById('badge-anthropic');
     const badgeOpenai = document.getElementById('badge-openai');
     const badgeOpenrouter = document.getElementById('badge-openrouter');
+    const badgeNvidia = document.getElementById('badge-nvidia');
 
     const modelOptions = {
       anthropic: [
@@ -983,15 +991,22 @@
         { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
       ],
       openrouter: [
-        { value: 'anthropic/claude-sonnet-4-6', label: 'Claude Sonnet 4.6' },
-        { value: 'anthropic/claude-opus-4-6', label: 'Claude Opus 4.6' },
-        { value: 'openai/gpt-5.4', label: 'GPT-5.4' },
-        { value: 'openai/gpt-4o', label: 'GPT-4o' },
-        { value: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
-        { value: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-        { value: 'meta-llama/llama-4-maverick', label: 'Llama 4 Maverick' },
-        { value: 'deepseek/deepseek-r1', label: 'DeepSeek R1' },
-        { value: 'mistralai/mistral-large', label: 'Mistral Large' },
+        { value: 'google/gemini-2.5-pro:free', label: 'Gemini 2.5 Pro (free)' },
+        { value: 'google/gemini-2.5-flash:free', label: 'Gemini 2.5 Flash (free)' },
+        { value: 'meta-llama/llama-4-maverick:free', label: 'Llama 4 Maverick (free)' },
+        { value: 'deepseek/deepseek-r1:free', label: 'DeepSeek R1 (free)' },
+        { value: 'qwen/qwen3-235b-a22b:free', label: 'Qwen3 235B (free)' },
+        { value: 'anthropic/claude-sonnet-4-6', label: 'Claude Sonnet 4.6 (paid)' },
+        { value: 'openai/gpt-5.4', label: 'GPT-5.4 (paid)' },
+        { value: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro (paid)' },
+        { value: 'mistralai/mistral-large', label: 'Mistral Large (paid)' },
+      ],
+      nvidia: [
+        { value: 'meta/llama-3.2-90b-vision-instruct', label: 'LLaMA 3.2 90B Vision (free)' },
+        { value: 'meta/llama-3.2-11b-vision-instruct', label: 'LLaMA 3.2 11B Vision (free)' },
+        { value: 'nvidia/llama-3.1-nemotron-70b-instruct', label: 'Nemotron 70B (free)' },
+        { value: 'microsoft/phi-3.5-vision-instruct', label: 'Phi 3.5 Vision (free)' },
+        { value: 'google/gemma-2-27b-it', label: 'Gemma 2 27B (free)' },
       ],
     };
 
@@ -1008,6 +1023,8 @@
       badgeOpenai.textContent = provider === 'openai' ? 'required' : 'optional';
       badgeOpenrouter.className = provider === 'openrouter' ? 'badge required' : 'badge optional';
       badgeOpenrouter.textContent = provider === 'openrouter' ? 'required' : 'optional';
+      badgeNvidia.className = provider === 'nvidia' ? 'badge required' : 'badge optional';
+      badgeNvidia.textContent = provider === 'nvidia' ? 'required' : 'optional';
     }
 
     setupProvider.addEventListener('change', updateProviderUI);
@@ -1027,6 +1044,7 @@
       if (settings.anthropicApiKey) keyAnthropicInput.value = settings.anthropicApiKey;
       if (settings.openaiApiKey) keyOpenaiInput.value = settings.openaiApiKey;
       if (settings.openrouterApiKey) keyOpenrouterInput.value = settings.openrouterApiKey;
+      if (settings.nvidiaApiKey) keyNvidiaInput.value = settings.nvidiaApiKey;
       if (settings.assemblyaiApiKey) keyAssemblyaiInput.value = settings.assemblyaiApiKey;
       if (settings.elevenlabsApiKey) keyElevenlabsInput.value = settings.elevenlabsApiKey;
 
@@ -1037,12 +1055,14 @@
         setupModel.value = settings.openaiModel;
       } else if (settings.aiProvider === 'openrouter' && settings.openrouterModel) {
         setupModel.value = settings.openrouterModel;
+      } else if (settings.aiProvider === 'nvidia' && settings.nvidiaModel) {
+        setupModel.value = settings.nvidiaModel;
       } else if (settings.claudeModel) {
         setupModel.value = settings.claudeModel;
       }
 
       // Check if we have the required key for the chosen provider
-      const hasKey = settings.anthropicApiKey || settings.openaiApiKey || settings.openrouterApiKey;
+      const hasKey = settings.anthropicApiKey || settings.openaiApiKey || settings.openrouterApiKey || settings.nvidiaApiKey;
       if (hasKey) {
         setConfigured(true);
       } else {
@@ -1063,7 +1083,7 @@
       statusDot.className = configured ? 'status connected' : 'status';
 
       // Update titlebar to show active provider
-      const providerLabels = { anthropic: 'Claude', openai: 'OpenAI', openrouter: 'OpenRouter' };
+      const providerLabels = { anthropic: 'Claude', openai: 'OpenAI', openrouter: 'OpenRouter', nvidia: 'NVIDIA' };
       const providerLabel = providerLabels[setupProvider.value] || setupProvider.value;
       document.querySelector('#titlebar .title').textContent = 'Clicky · ' + providerLabel;
 
@@ -1085,6 +1105,8 @@
         window.clicky.setSetting('openaiModel', setupModel.value);
       } else if (provider === 'openrouter') {
         window.clicky.setSetting('openrouterModel', setupModel.value);
+      } else if (provider === 'nvidia') {
+        window.clicky.setSetting('nvidiaModel', setupModel.value);
       } else {
         window.clicky.setSetting('claudeModel', setupModel.value);
       }
@@ -1093,8 +1115,9 @@
       const anthropicKey = keyAnthropicInput.value.trim();
       const openaiKey = keyOpenaiInput.value.trim();
       const openrouterKey = keyOpenrouterInput.value.trim();
-      const keyMap = { anthropic: anthropicKey, openai: openaiKey, openrouter: openrouterKey };
-      const inputMap = { anthropic: keyAnthropicInput, openai: keyOpenaiInput, openrouter: keyOpenrouterInput };
+      const nvidiaKey = keyNvidiaInput.value.trim();
+      const keyMap = { anthropic: anthropicKey, openai: openaiKey, openrouter: openrouterKey, nvidia: nvidiaKey };
+      const inputMap = { anthropic: keyAnthropicInput, openai: keyOpenaiInput, openrouter: keyOpenrouterInput, nvidia: keyNvidiaInput };
       const requiredKey = keyMap[provider];
       const requiredInput = inputMap[provider];
 
@@ -1106,6 +1129,7 @@
 
       if (anthropicKey) window.clicky.setSetting('anthropicApiKey', anthropicKey);
       if (openrouterKey) window.clicky.setSetting('openrouterApiKey', openrouterKey);
+      if (nvidiaKey) window.clicky.setSetting('nvidiaApiKey', nvidiaKey);
 
       if (openaiKey) {
         window.clicky.setSetting('openaiApiKey', openaiKey);

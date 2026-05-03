@@ -7,6 +7,7 @@ interface SettingsSchema {
   anthropicApiKey: string;
   openaiApiKey: string;
   openrouterApiKey: string;
+  nvidiaApiKey: string;
   assemblyaiApiKey: string;
   elevenlabsApiKey: string;
 
@@ -27,10 +28,11 @@ interface SettingsSchema {
   pushToTalkHotkey: string;
 
   // AI Provider
-  aiProvider: "anthropic" | "openai" | "openrouter";
+  aiProvider: "anthropic" | "openai" | "openrouter" | "nvidia";
   claudeModel: string;
   openaiModel: string;
   openrouterModel: string;
+  nvidiaModel: string;
 
   // UI
   alwaysOnTop: boolean;
@@ -44,6 +46,7 @@ const defaults: SettingsSchema = {
   anthropicApiKey: "",
   openaiApiKey: "",
   openrouterApiKey: "",
+  nvidiaApiKey: "",
   assemblyaiApiKey: "",
   elevenlabsApiKey: "",
   proxyUrl: "",
@@ -60,6 +63,7 @@ const defaults: SettingsSchema = {
   claudeModel: "claude-sonnet-4-5-20250929",
   openaiModel: "gpt-4o",
   openrouterModel: "anthropic/claude-sonnet-4-5",
+  nvidiaModel: "meta/llama-3.2-90b-vision-instruct",
   hipaaMode: false,
 };
 

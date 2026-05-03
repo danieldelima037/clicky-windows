@@ -4,6 +4,7 @@ import { SettingsStore } from "./settings";
 import { ClaudeService } from "../services/claude";
 import { OpenAIChatService } from "../services/openai-chat";
 import { OpenRouterChatService } from "../services/openrouter-chat";
+import { NvidiaChatService } from "../services/nvidia-chat";
 import {
   TranscriptionProvider,
   createTranscriptionProvider,
@@ -29,7 +30,7 @@ const MAX_CONVERSATION_HISTORY = 10;
 /**
  * Central orchestrator — mirrors CompanionManager.swift from macOS version.
  *
- * Flow: voice → screenshot → ai (anthropic or openai) → tts → overlay pointing
+ * Flow: voice → screenshot → ai (anthropic, openai, openrouter, or nvidia) → tts → overlay pointing
  */
 export class CompanionManager {
   private settings: SettingsStore;
@@ -52,6 +53,9 @@ export class CompanionManager {
     }
     if (provider === "openrouter") {
       return new OpenRouterChatService(this.settings);
+    }
+    if (provider === "nvidia") {
+      return new NvidiaChatService(this.settings);
     }
     return new ClaudeService(this.settings);
   }

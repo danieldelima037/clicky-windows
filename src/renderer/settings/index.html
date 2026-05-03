@@ -213,6 +213,11 @@
   </div>
 
   <div class="field">
+    <label>NVIDIA API Key</label>
+    <input type="password" id="nvidiaApiKey" placeholder="nvapi-... (free models at build.nvidia.com)">
+  </div>
+
+  <div class="field">
     <label>AssemblyAI API Key</label>
     <input type="password" id="assemblyaiApiKey" placeholder="Voice transcription">
   </div>
@@ -276,6 +281,7 @@
       <option value="anthropic">Anthropic (Claude)</option>
       <option value="openai">OpenAI (GPT)</option>
       <option value="openrouter">OpenRouter (300+ models)</option>
+      <option value="nvidia">NVIDIA NIM (free models)</option>
     </select>
   </div>
 
@@ -305,7 +311,18 @@
 
   <div class="field" id="openrouterModelGroup" style="display:none">
     <label>OpenRouter Model</label>
-    <input type="text" id="openrouterModel" placeholder="e.g. anthropic/claude-sonnet-4-5, google/gemini-2.5-pro">
+    <input type="text" id="openrouterModel" placeholder="e.g. google/gemini-2.5-pro:free, meta-llama/llama-4-maverick:free">
+  </div>
+
+  <div class="field" id="nvidiaModelGroup" style="display:none">
+    <label>NVIDIA Model</label>
+    <select id="nvidiaModel">
+      <option value="meta/llama-3.2-90b-vision-instruct">LLaMA 3.2 90B Vision (free)</option>
+      <option value="meta/llama-3.2-11b-vision-instruct">LLaMA 3.2 11B Vision (free)</option>
+      <option value="nvidia/llama-3.1-nemotron-70b-instruct">Nemotron 70B (free)</option>
+      <option value="microsoft/phi-3.5-vision-instruct">Phi 3.5 Vision (free)</option>
+      <option value="google/gemma-2-27b-it">Gemma 2 27B (free)</option>
+    </select>
   </div>
 
   <div class="section-label">Window</div>
@@ -345,9 +362,9 @@
 
   <script>
     const fields = [
-      'anthropicApiKey', 'openaiApiKey', 'openrouterApiKey', 'assemblyaiApiKey', 'elevenlabsApiKey',
+      'anthropicApiKey', 'openaiApiKey', 'openrouterApiKey', 'nvidiaApiKey', 'assemblyaiApiKey', 'elevenlabsApiKey',
       'proxyUrl', 'useProxy', 'pushToTalkHotkey', 'transcriptionProvider',
-      'aiProvider', 'claudeModel', 'openaiModel', 'openrouterModel',
+      'aiProvider', 'claudeModel', 'openaiModel', 'openrouterModel', 'nvidiaModel',
       'alwaysOnTop', 'cursorBuddyEnabled', 'hipaaMode'
     ];
 
@@ -376,6 +393,7 @@
       document.getElementById('claudeModelGroup').style.display = provider === 'anthropic' ? '' : 'none';
       document.getElementById('openaiModelGroup').style.display = provider === 'openai' ? '' : 'none';
       document.getElementById('openrouterModelGroup').style.display = provider === 'openrouter' ? '' : 'none';
+      document.getElementById('nvidiaModelGroup').style.display = provider === 'nvidia' ? '' : 'none';
     }
 
     document.getElementById('aiProvider').addEventListener('change', updateProviderUI);
@@ -417,12 +435,13 @@
 
     function updateStatus(settings) {
       const status = document.getElementById('status');
-      if ((settings.useProxy && settings.proxyUrl) || settings.anthropicApiKey) {
+      const hasKey = (settings.useProxy && settings.proxyUrl) || settings.anthropicApiKey || settings.openaiApiKey || settings.openrouterApiKey || settings.nvidiaApiKey;
+      if (hasKey) {
         status.className = 'status-bar ok';
         status.innerHTML = '<div class="dot"></div><span>Ready</span>';
       } else {
         status.className = 'status-bar warn';
-        status.innerHTML = '<div class="dot"></div><span>Enter your Anthropic API key to get started</span>';
+        status.innerHTML = '<div class="dot"></div><span>Enter an API key to get started</span>';
       }
     }
   </script>
