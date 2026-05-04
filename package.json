@@ -39,8 +39,10 @@
     "typescript": "^5.7.0"
   },
   "dependencies": {
+    "@nut-tree-fork/nut-js": "^4.2.6",
     "@types/ws": "^8.18.1",
     "electron-updater": "^6.3.0",
+    "jimp": "^1.6.1",
     "ws": "^8.20.0"
   }
 }
