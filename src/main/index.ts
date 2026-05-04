@@ -130,7 +130,7 @@ function createOverlayWindow(display: Electron.Display, displayIndex: number): B
 function createChatWindow(): BrowserWindow {
   const win = new BrowserWindow({
     width: 420,
-    height: 550,
+    height: 700,
     resizable: true,
     show: false,
     frame: false,
