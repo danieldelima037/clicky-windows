@@ -149,8 +149,6 @@
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
       animation: slideDown 0.3s ease;
-      max-height: 70vh;
-      overflow-y: auto;
     }
 
     @keyframes slideDown {
@@ -159,11 +157,6 @@
     }
 
     #setup.hidden { display: none; }
-
-    #setup-provider option, #setup-model option {
-      color: #00ff00;
-      background: #1a1a1a;
-    }
 
     #setup h3 {
       font-size: 13px;
@@ -850,26 +843,17 @@
 
     <div class="key-group">
       <label>AI Provider</label>
-      <select id="setup-provider" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);color:#00ff00;font-size:12px;font-family:inherit;outline:none;">
+      <select id="setup-provider" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:12px;font-family:inherit;outline:none;">
         <option value="anthropic">Anthropic (Claude)</option>
         <option value="openai">OpenAI (GPT)</option>
         <option value="openrouter">OpenRouter (300+ models)</option>
         <option value="nvidia">NVIDIA NIM (free models)</option>
-        <option value="groq">Groq</option>
-        <option value="gemini">Google Gemini</option>
-        <option value="deepseek">DeepSeek</option>
-        <option value="ollama">Ollama (local)</option>
-        <option value="lmstudio">LM Studio (local)</option>
-        <option value="opencodezen">OpenCode Zen (Free)</option>
-        <option value="together">Together AI</option>
-        <option value="fireworks">Fireworks AI (Kimi)</option>
-        <option value="custom">Custom (any OpenAI-compatible)</option>
       </select>
     </div>
 
     <div class="key-group" id="setup-model-group">
       <label>Model</label>
-      <select id="setup-model" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);color:#00ff00;font-size:12px;font-family:inherit;outline:none;">
+      <select id="setup-model" style="width:100%;padding:8px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:12px;font-family:inherit;outline:none;">
       </select>
     </div>
 
@@ -891,56 +875,6 @@
     <div class="key-group">
       <label>NVIDIA Key <span class="badge" id="badge-nvidia">optional</span></label>
       <input type="password" id="key-nvidia" placeholder="nvapi-... (free at build.nvidia.com)">
-    </div>
-
-    <div class="key-group">
-      <label>Groq Key <span class="badge optional">optional</span></label>
-      <input type="password" id="key-groq" placeholder="gsk_... (fast inference)">
-    </div>
-
-    <div class="key-group">
-      <label>Gemini Key <span class="badge optional">optional</span></label>
-      <input type="password" id="key-gemini" placeholder="AIza... (Google AI)">
-    </div>
-
-    <div class="key-group">
-      <label>DeepSeek Key <span class="badge optional">optional</span></label>
-      <input type="password" id="key-deepseek" placeholder="sk-... (deepseek.com)">
-    </div>
-
-    <div class="key-group">
-      <label>Ollama/Local Model <span class="badge optional">optional</span></label>
-      <input type="text" id="key-ollama" placeholder="llama3.2-vision">
-    </div>
-
-    <div class="key-group">
-      <label>LM Studio Model <span class="badge optional">optional</span></label>
-      <input type="text" id="key-lmstudio" placeholder="llama3.2-vision">
-    </div>
-
-    <div class="key-group">
-      <label>OpenCode Zen Key <span class="badge optional">optional</span></label>
-      <input type="password" id="key-opencodezen" placeholder="sk-zen-...">
-    </div>
-
-    <div class="key-group">
-      <label>Together AI Key <span class="badge optional">optional</span></label>
-      <input type="password" id="key-together" placeholder="Together AI key">
-    </div>
-
-    <div class="key-group">
-      <label>Fireworks AI Key <span class="badge optional">optional</span></label>
-      <input type="password" id="key-fireworks" placeholder="fw_... (Fireworks API key)">
-    </div>
-
-    <div class="key-group">
-      <label>Custom Base URL <span class="badge optional">optional</span></label>
-      <input type="text" id="key-custom-url" placeholder="http://localhost:8000/v1">
-    </div>
-
-    <div class="key-group">
-      <label>Custom API Key <span class="badge optional">optional</span></label>
-      <input type="password" id="key-custom" placeholder="API key">
     </div>
 
     <div class="key-group">
@@ -1030,15 +964,6 @@
     const keyOpenaiInput = document.getElementById('key-openai');
     const keyOpenrouterInput = document.getElementById('key-openrouter');
     const keyNvidiaInput = document.getElementById('key-nvidia');
-    const keyGroqInput = document.getElementById('key-groq');
-    const keyGeminiInput = document.getElementById('key-gemini');
-    const keyDeepseekInput = document.getElementById('key-deepseek');
-    const keyOllamaInput = document.getElementById('key-ollama');
-    const keyLmstudioInput = document.getElementById('key-lmstudio');
-    const keyOpencodezenInput = document.getElementById('key-opencodezen');
-    const keyTogetherInput = document.getElementById('key-together');
-    const keyFireworksInput = document.getElementById('key-fireworks');
-    const keyCustomInput = document.getElementById('key-custom');
     const keyAssemblyaiInput = document.getElementById('key-assemblyai');
     const keyElevenlabsInput = document.getElementById('key-elevenlabs');
     const setupProvider = document.getElementById('setup-provider');
@@ -1083,43 +1008,6 @@
         { value: 'microsoft/phi-3.5-vision-instruct', label: 'Phi 3.5 Vision (free)' },
         { value: 'google/gemma-2-27b-it', label: 'Gemma 2 27B (free)' },
       ],
-      groq: [
-        { value: 'llama-3.2-90b-vision-instruct', label: 'LLaMA 3.2 90B Vision' },
-        { value: 'qwen-2.5-72b-instruct', label: 'Qwen 2.5 72B' },
-      ],
-      gemini: [
-        { value: 'gemini-2.5-pro-preview-06-05', label: 'Gemini 2.5 Pro (latest, vision)' },
-        { value: 'gemini-2.5-flash-preview-05-20', label: 'Gemini 2.5 Flash (vision)' },
-        { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
-        { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash-Lite' },
-      ],
-      deepseek: [
-        { value: 'deepseek-chat', label: 'DeepSeek Chat' },
-        { value: 'deepseek-coder', label: 'DeepSeek Coder' },
-      ],
-      ollama: [
-        { value: 'llama3.2-vision', label: 'LLaMA 3.2 Vision' },
-        { value: 'llama3.1', label: 'LLaMA 3.1' },
-      ],
-      lmstudio: [
-        { value: 'llama3.2-vision', label: 'LLaMA 3.2 Vision' },
-        { value: 'llama3.1', label: 'LLaMA 3.1' },
-      ],
-      opencodezen: [
-        { value: 'minimax-m2.5-free', label: 'MiniMax M2.5 Free (FREE!)' },
-        { value: 'minimax-m2.5', label: 'MiniMax M2.5' },
-        { value: 'gpt-5-nano', label: 'GPT-5 Nano (FREE!)' },
-      ],
-      together: [
-        { value: 'Qwen/Qwen2-VL-72B-Instruct', label: 'Qwen 2 VL 72B' },
-        { value: 'meta-llama/Llama-3.2-90B-Vision-Instruct', label: 'LLaMA 3.2 90B Vision' },
-      ],
-      fireworks: [
-        { value: 'accounts/fireworks/models/kimi-k2p5', label: 'Kimi K2.5 (vision, SOTA)' },
-      ],
-      custom: [
-        { value: '', label: '(enter model name)' },
-      ],
     };
 
     function updateProviderUI() {
@@ -1157,15 +1045,6 @@
       if (settings.openaiApiKey) keyOpenaiInput.value = settings.openaiApiKey;
       if (settings.openrouterApiKey) keyOpenrouterInput.value = settings.openrouterApiKey;
       if (settings.nvidiaApiKey) keyNvidiaInput.value = settings.nvidiaApiKey;
-      if (settings.groqApiKey) keyGroqInput.value = settings.groqApiKey;
-      if (settings.geminiApiKey) keyGeminiInput.value = settings.geminiApiKey;
-      if (settings.deepseekApiKey) keyDeepseekInput.value = settings.deepseekApiKey;
-      if (settings.ollamaApiKey) keyOllamaInput.value = settings.ollamaApiKey;
-      if (settings.lmstudioApiKey) keyLmstudioInput.value = settings.lmstudioApiKey;
-      if (settings.opencodeZenApiKey) keyOpencodezenInput.value = settings.opencodeZenApiKey;
-      if (settings.togetherApiKey) keyTogetherInput.value = settings.togetherApiKey;
-      if (settings.fireworksApiKey) keyFireworksInput.value = settings.fireworksApiKey;
-      if (settings.customApiKey) keyCustomInput.value = settings.customApiKey;
       if (settings.assemblyaiApiKey) keyAssemblyaiInput.value = settings.assemblyaiApiKey;
       if (settings.elevenlabsApiKey) keyElevenlabsInput.value = settings.elevenlabsApiKey;
 
@@ -1183,9 +1062,7 @@
       }
 
       // Check if we have the required key for the chosen provider
-      const hasKey = settings.anthropicApiKey || settings.openaiApiKey || settings.openrouterApiKey || settings.nvidiaApiKey ||
-        settings.groqApiKey || settings.geminiApiKey || settings.deepseekApiKey || settings.opencodeZenApiKey ||
-        settings.togetherApiKey || settings.fireworksApiKey || settings.customApiKey;
+      const hasKey = settings.anthropicApiKey || settings.openaiApiKey || settings.openrouterApiKey || settings.nvidiaApiKey;
       if (hasKey) {
         setConfigured(true);
       } else {
@@ -1239,28 +1116,8 @@
       const openaiKey = keyOpenaiInput.value.trim();
       const openrouterKey = keyOpenrouterInput.value.trim();
       const nvidiaKey = keyNvidiaInput.value.trim();
-      const groqKey = keyGroqInput.value.trim();
-      const geminiKey = keyGeminiInput.value.trim();
-      const deepseekKey = keyDeepseekInput.value.trim();
-      const ollamaKey = keyOllamaInput.value.trim();
-      const lmstudioKey = keyLmstudioInput.value.trim();
-      const opencodezenKey = keyOpencodezenInput.value.trim();
-      const togetherKey = keyTogetherInput.value.trim();
-      const fireworksKey = keyFireworksInput.value.trim();
-      const customKey = keyCustomInput.value.trim();
-
-      const keyMap = {
-        anthropic: anthropicKey, openai: openaiKey, openrouter: openrouterKey,
-        nvidia: nvidiaKey, groq: groqKey, gemini: geminiKey, deepseek: deepseekKey,
-        ollama: ollamaKey, lmstudio: lmstudioKey, opencodezen: opencodezenKey,
-        together: togetherKey, fireworks: fireworksKey, custom: customKey
-      };
-      const inputMap = {
-        anthropic: keyAnthropicInput, openai: keyOpenaiInput, openrouter: keyOpenrouterInput,
-        nvidia: keyNvidiaInput, groq: keyGroqInput, gemini: keyGeminiInput, deepseek: keyDeepseekInput,
-        ollama: keyOllamaInput, lmstudio: keyLmstudioInput, opencodezen: keyOpencodezenInput,
-        together: keyTogetherInput, fireworks: keyFireworksInput, custom: keyCustomInput
-      };
+      const keyMap = { anthropic: anthropicKey, openai: openaiKey, openrouter: openrouterKey, nvidia: nvidiaKey };
+      const inputMap = { anthropic: keyAnthropicInput, openai: keyOpenaiInput, openrouter: keyOpenrouterInput, nvidia: keyNvidiaInput };
       const requiredKey = keyMap[provider];
       const requiredInput = inputMap[provider];
 
@@ -1273,15 +1130,6 @@
       if (anthropicKey) window.clicky.setSetting('anthropicApiKey', anthropicKey);
       if (openrouterKey) window.clicky.setSetting('openrouterApiKey', openrouterKey);
       if (nvidiaKey) window.clicky.setSetting('nvidiaApiKey', nvidiaKey);
-      if (groqKey) window.clicky.setSetting('groqApiKey', groqKey);
-      if (geminiKey) window.clicky.setSetting('geminiApiKey', geminiKey);
-      if (deepseekKey) window.clicky.setSetting('deepseekApiKey', deepseekKey);
-      if (ollamaKey) window.clicky.setSetting('ollamaApiKey', ollamaKey);
-      if (lmstudioKey) window.clicky.setSetting('lmstudioApiKey', lmstudioKey);
-      if (opencodezenKey) window.clicky.setSetting('opencodeZenApiKey', opencodezenKey);
-      if (togetherKey) window.clicky.setSetting('togetherApiKey', togetherKey);
-      if (fireworksKey) window.clicky.setSetting('fireworksApiKey', fireworksKey);
-      if (customKey) window.clicky.setSetting('customApiKey', customKey);
 
       if (openaiKey) {
         window.clicky.setSetting('openaiApiKey', openaiKey);

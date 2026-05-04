@@ -5,19 +5,11 @@ import { ClaudeService } from "../services/claude";
 import { OpenAIChatService } from "../services/openai-chat";
 import { OpenRouterChatService } from "../services/openrouter-chat";
 import { NvidiaChatService } from "../services/nvidia-chat";
-import { GroqService } from "../services/groq";
-import { GeminiService } from "../services/gemini";
-import { DeepSeekService } from "../services/deepseek";
-import { OllamaService } from "../services/ollama";
-import { LMStudioService } from "../services/lmstudio";
-import { OpenCodeZenService } from "../services/opencodezen";
-import { GenericAIProvider } from "../services/generic";
 import {
   TranscriptionProvider,
   createTranscriptionProvider,
 } from "../services/transcription/interface";
 import { createTTSProvider } from "../services/tts/interface";
-import { mouse, Point, keyboard } from "@nut-tree-fork/nut-js";
 
 interface ConversationEntry {
   role: "user" | "assistant";
@@ -64,28 +56,6 @@ export class CompanionManager {
     }
     if (provider === "nvidia") {
       return new NvidiaChatService(this.settings);
-    }
-    if (provider === "groq") {
-      return new GroqService(this.settings);
-    }
-    if (provider === "gemini") {
-      return new GeminiService(this.settings);
-    }
-    if (provider === "deepseek") {
-      return new DeepSeekService(this.settings);
-    }
-    if (provider === "ollama") {
-      return new OllamaService(this.settings);
-    }
-    if (provider === "lmstudio") {
-      return new LMStudioService(this.settings);
-    }
-    if (provider === "opencodezen") {
-      return new OpenCodeZenService(this.settings);
-    }
-    // Generic providers (Azure, HuggingFace, Together, Cerebras, Fireworks, DeepInfra, Baseten, Venice, Nebius, Moonshot, Custom)
-    if (["azure", "huggingface", "together", "cerebras", "fireworks", "deepinfra", "baseten", "venice", "nebius", "moonshot", "custom"].includes(provider)) {
-      return new GenericAIProvider(this.settings, provider);
     }
     return new ClaudeService(this.settings);
   }
@@ -183,15 +153,6 @@ export class CompanionManager {
     const pointTags = refinedTags.map((tag) => {
       const shot = screenshots[tag.screen] || screenshots[0];
       if (!shot) return tag;
-      
-      if (tag.isPct) {
-        return {
-          ...tag,
-          x: Math.round((tag.x / 100) * shot.bounds.width),
-          y: Math.round((tag.y / 100) * shot.bounds.height),
-        };
-      }
-      
       const scaleX = shot.bounds.width / shot.imageDimensions.width;
       const scaleY = shot.bounds.height / shot.imageDimensions.height;
       return {
@@ -224,49 +185,9 @@ export class CompanionManager {
       }
     }
 
-    // Execute CLICK tags
-    const clickTags = this.parseClickTags(response.text);
-    for (const tag of clickTags) {
-      const shot = screenshots[tag.screen] || screenshots[0];
-      if (shot) {
-        let globalX, globalY;
-        if (tag.isPct) {
-          globalX = shot.bounds.x + Math.round((tag.x / 100) * shot.bounds.width);
-          globalY = shot.bounds.y + Math.round((tag.y / 100) * shot.bounds.height);
-        } else {
-          const scaleX = shot.bounds.width / shot.imageDimensions.width;
-          const scaleY = shot.bounds.height / shot.imageDimensions.height;
-          globalX = shot.bounds.x + Math.round(tag.x * scaleX);
-          globalY = shot.bounds.y + Math.round(tag.y * scaleY);
-        }
-        console.log(`[Clicky] Clicking at ${globalX}, ${globalY}`);
-        try {
-          await mouse.setPosition(new Point(globalX, globalY));
-          await mouse.leftClick();
-        } catch (e) {
-          console.error("Click error:", e);
-        }
-      }
-    }
-
-    // Execute TYPE tags
-    const typeTags = this.parseTypeTags(response.text);
-    for (const tag of typeTags) {
-      console.log(`[Clicky] Typing text: ${tag.text}`);
-      try {
-        await keyboard.type(tag.text);
-      } catch (e) {
-        console.error("Type error:", e);
-      }
-    }
-
-    // 4. Speak response (strip tags from spoken text) — non-blocking
+    // 4. Speak response (strip POINT tags from spoken text) — non-blocking
     //    Re-read settings each time so chat toggle changes take effect immediately
-    const spokenText = response.text
-      .replace(/\[POINT:[^\]]+\]/g, "")
-      .replace(/\[CLICK:[^\]]+\]/g, "")
-      .replace(/\[TYPE:[^\]]+\]/g, "")
-      .trim();
+    const spokenText = response.text.replace(/\[POINT:[^\]]+\]/g, "").trim();
     const ttsOn = this.settings.get("ttsEnabled");
     const ttsProv = this.settings.get("ttsProvider");
     if (ttsOn && spokenText) {
@@ -289,50 +210,18 @@ export class CompanionManager {
 
   private parseRawPointTags(
     text: string
-  ): Array<{ x: number; y: number; label: string; screen: number; isPct?: boolean }> {
-    const regex = /\[POINT(_PCT)?:([\d.]+),([\d.]+):([^:]+):screen(\d+)\]/gi;
-    const tags: Array<{ x: number; y: number; label: string; screen: number; isPct?: boolean }> = [];
+  ): Array<{ x: number; y: number; label: string; screen: number }> {
+    const regex = /\[POINT:(\d+),(\d+):([^:]+):screen(\d+)\]/g;
+    const tags: Array<{ x: number; y: number; label: string; screen: number }> = [];
     let match: RegExpExecArray | null;
 
     while ((match = regex.exec(text)) !== null) {
       tags.push({
-        isPct: !!match[1],
-        x: parseFloat(match[2]),
-        y: parseFloat(match[3]),
-        label: match[4],
-        screen: parseInt(match[5], 10),
-      });
-    }
-
-    return tags;
-  }
-
-  private parseClickTags(
-    text: string
-  ): Array<{ x: number; y: number; screen: number; isPct?: boolean }> {
-    const regex = /\[CLICK(_PCT)?:([\d.]+),([\d.]+):screen(\d+)\]/gi;
-    const tags: Array<{ x: number; y: number; screen: number; isPct?: boolean }> = [];
-    let match: RegExpExecArray | null;
-
-    while ((match = regex.exec(text)) !== null) {
-      tags.push({
-        isPct: !!match[1],
-        x: parseFloat(match[2]),
-        y: parseFloat(match[3]),
+        x: parseInt(match[1], 10),
+        y: parseInt(match[2], 10),
+        label: match[3],
         screen: parseInt(match[4], 10),
       });
-    }
-
-    return tags;
-  }
-
-  private parseTypeTags(text: string): Array<{ text: string }> {
-    const regex = /\[TYPE:([^\]]+)\]/g;
-    const tags: Array<{ text: string }> = [];
-    let match: RegExpExecArray | null;
-
-    while ((match = regex.exec(text)) !== null) {
-      tags.push({ text: match[1] });
     }
 
     return tags;
