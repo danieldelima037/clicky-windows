@@ -3,14 +3,15 @@ import { exec } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
+import { fetchWithTimeout } from "../ai-provider";
 
-const MAX_CHARS = 4000; // OpenAI limit is 4096, leave margin
+const MAX_CHARS = 4000;
 
-/**
- * OpenAI TTS — uses the /v1/audio/speech endpoint.
- * Voices: alloy, ash, ballad, coral, echo, fable, onyx, nova, sage, shimmer
- * Auto-chunks long text and dynamically calculates playback duration.
- */
+function buildEncodedCommand(psScript: string): string {
+  const encoded = Buffer.from(psScript, "utf16le").toString("base64");
+  return `powershell -EncodedCommand ${encoded}`;
+}
+
 export class OpenAITTS implements TTSProvider {
   private apiKey: string;
   private voice: string;
@@ -27,7 +28,6 @@ export class OpenAITTS implements TTSProvider {
     this.stop();
     this.stopped = false;
 
-    // Split into chunks at sentence boundaries
     const chunks = this.splitText(text);
 
     for (const chunk of chunks) {
@@ -39,7 +39,7 @@ export class OpenAITTS implements TTSProvider {
   private async speakChunk(text: string): Promise<void> {
     this.abortController = new AbortController();
 
-    const response = await fetch("https://api.openai.com/v1/audio/speech", {
+    const response = await fetchWithTimeout("https://api.openai.com/v1/audio/speech", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
@@ -63,25 +63,25 @@ export class OpenAITTS implements TTSProvider {
     const tmpFile = path.join(os.tmpdir(), `clicky-tts-${Date.now()}.mp3`);
     fs.writeFileSync(tmpFile, audioBuffer);
 
-    // Estimate duration: MP3 at ~128kbps = ~16KB/sec
     const estimatedSeconds = Math.ceil(audioBuffer.length / 16000) + 1;
 
     return new Promise((resolve, reject) => {
-      const psCmd = [
+      const psScript = [
         "Add-Type -AssemblyName presentationCore",
         "$p = New-Object System.Windows.Media.MediaPlayer",
-        `$p.Open([Uri]'${tmpFile}')`,
+        `$p.Open([Uri]'${tmpFile.replace(/'/g, "''")}')`,
         "$p.Play()",
         `Start-Sleep -Seconds ${estimatedSeconds}`,
         "$p.Close()",
       ].join("; ");
+      const cmd = buildEncodedCommand(psScript);
 
       this.currentProcess = exec(
-        `powershell -Command "${psCmd}"`,
+        cmd,
         { timeout: estimatedSeconds * 1000 + 5000 },
         (error) => {
           this.currentProcess = null;
-          try { fs.unlinkSync(tmpFile); } catch {}
+          try { fs.unlinkSync(tmpFile); } catch (e) { console.warn("[Clicky] TTS temp file cleanup failed:", e instanceof Error ? e.message : e); }
           if (error && !error.killed) {
             reject(error);
           } else {
@@ -104,17 +104,14 @@ export class OpenAITTS implements TTSProvider {
         break;
       }
 
-      // Find a good break point: sentence end, then comma, then space
       let breakAt = -1;
       const searchRange = remaining.substring(0, MAX_CHARS);
 
-      // Try sentence boundaries
       for (const sep of [". ", "! ", "? ", ".\n", "!\n", "?\n"]) {
         const idx = searchRange.lastIndexOf(sep);
         if (idx > breakAt) breakAt = idx + sep.length;
       }
 
-      // Fall back to comma or space
       if (breakAt <= 0) {
         const commaIdx = searchRange.lastIndexOf(", ");
         if (commaIdx > 0) breakAt = commaIdx + 2;

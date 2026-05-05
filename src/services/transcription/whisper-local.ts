@@ -99,10 +99,10 @@ export class WhisperLocalProvider implements TranscriptionProvider {
         cwd: path.dirname(whisperExe),
       });
 
-      const cleanup = () => {
-        try { fs.unlinkSync(wavPath); } catch { /* ignore */ }
-        try { fs.unlinkSync(txtPath); } catch { /* ignore */ }
-      };
+  const cleanup = () => {
+      try { fs.unlinkSync(wavPath); } catch (e) { console.warn("[Clicky] Temp WAV cleanup failed:", e instanceof Error ? e.message : e); }
+      try { fs.unlinkSync(txtPath); } catch (e) { console.warn("[Clicky] Temp TXT cleanup failed:", e instanceof Error ? e.message : e); }
+    };
 
       const timer = setTimeout(() => {
         proc.kill();

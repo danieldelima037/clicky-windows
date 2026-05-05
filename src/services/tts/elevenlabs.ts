@@ -3,11 +3,13 @@ import { exec } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
+import { fetchWithTimeout } from "../ai-provider";
 
-/**
- * ElevenLabs TTS — matches macOS version's ElevenLabsTTSClient.
- * Uses eleven_flash_v2_5 for low-latency streaming.
- */
+function buildEncodedCommand(psScript: string): string {
+  const encoded = Buffer.from(psScript, "utf16le").toString("base64");
+  return `powershell -EncodedCommand ${encoded}`;
+}
+
 export class ElevenLabsTTS implements TTSProvider {
   private apiKey: string;
   private voiceId: string;
@@ -23,7 +25,7 @@ export class ElevenLabsTTS implements TTSProvider {
     this.stop();
     this.abortController = new AbortController();
 
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `https://api.elevenlabs.io/v1/text-to-speech/${this.voiceId}`,
       {
         method: "POST",
@@ -49,24 +51,25 @@ export class ElevenLabsTTS implements TTSProvider {
 
     const audioBuffer = Buffer.from(await response.arrayBuffer());
 
-    // Write to temp file and play via PowerShell
     const tmpFile = path.join(os.tmpdir(), `clicky-tts-${Date.now()}.mp3`);
     fs.writeFileSync(tmpFile, audioBuffer);
 
+    const estimatedSeconds = Math.ceil(audioBuffer.length / 16000) + 1;
+
     return new Promise((resolve, reject) => {
-      const psCmd = [
+      const psScript = [
         "Add-Type -AssemblyName presentationCore",
         "$p = New-Object System.Windows.Media.MediaPlayer",
-        `$p.Open([Uri]'${tmpFile}')`,
+        `$p.Open([Uri]'${tmpFile.replace(/'/g, "''")}')`,
         "$p.Play()",
-        "Start-Sleep -Seconds 8",
+        `Start-Sleep -Seconds ${estimatedSeconds}`,
         "$p.Close()",
       ].join("; ");
-      const cmd = `powershell -Command "${psCmd}"`;
+      const cmd = buildEncodedCommand(psScript);
 
-      this.currentProcess = exec(cmd, { timeout: 60000 }, (error) => {
+      this.currentProcess = exec(cmd, { timeout: estimatedSeconds * 1000 + 5000 }, (error) => {
         this.currentProcess = null;
-        try { fs.unlinkSync(tmpFile); } catch {}
+        try { fs.unlinkSync(tmpFile); } catch (e) { console.warn("[Clicky] TTS temp file cleanup failed:", e instanceof Error ? e.message : e); }
         if (error && !error.killed) {
           reject(error);
         } else {

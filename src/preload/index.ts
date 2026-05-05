@@ -1,14 +1,12 @@
 import { contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("clicky", {
-  // Hotkey events
   onRecordingChanged: (callback: (isRecording: boolean) => void) => {
     ipcRenderer.on("hotkey:recording-changed", (_event, isRecording) => {
       callback(isRecording);
     });
   },
 
-  // Overlay pointing
   onPoint: (
     callback: (
       tags: Array<{ x: number; y: number; label: string; screen: number }>
@@ -19,21 +17,18 @@ contextBridge.exposeInMainWorld("clicky", {
     });
   },
 
-  // TTS audio playback
   onTTSPlay: (callback: (audioData: ArrayBuffer) => void) => {
     ipcRenderer.on("tts:play", (_event, data) => {
       callback(data);
     });
   },
 
-  // Voice transcript from push-to-talk
   onVoiceTranscript: (callback: (transcript: string) => void) => {
     ipcRenderer.on("voice:transcript", (_event, transcript) => {
       callback(transcript);
     });
   },
 
-  // Cursor buddy
   onCursorBuddy: (callback: (x: number, y: number) => void) => {
     ipcRenderer.on("overlay:cursor-buddy", (_event, x, y) => {
       callback(x, y);
@@ -46,32 +41,42 @@ contextBridge.exposeInMainWorld("clicky", {
     });
   },
 
-  // Processing stage updates from companion pipeline
   onStage: (callback: (data: { stage: string; label: string }) => void) => {
     ipcRenderer.on("companion:stage", (_event, data) => {
       callback(data);
     });
   },
 
-  // Settings
+  onConfirmRequest: (callback: (data: { actions: string[] }) => void) => {
+    ipcRenderer.on("companion:confirm-request", (_event, data) => {
+      callback(data);
+    });
+  },
+
   getSettings: () => ipcRenderer.invoke("settings:getAll"),
   setSetting: (key: string, value: unknown) =>
     ipcRenderer.invoke("settings:set", key, value),
 
-  // Chat — send a text query (captures screen + sends to Claude)
+  batchSetSettings: (pairs: Array<[string, unknown]>) =>
+    ipcRenderer.invoke("settings:batchSet", pairs),
+
   sendQuery: (text: string): Promise<string> =>
     ipcRenderer.invoke("chat:query", text),
 
-  // Audio — send complete recording for transcription + AI query
   sendAudioRecording: (audioData: ArrayBuffer): Promise<{ transcript?: string; response?: string; error?: string }> =>
     ipcRenderer.invoke("audio:recording-complete", audioData),
 
-  // Open URL in default browser
+  clearHistory: () => ipcRenderer.invoke("companion:clearHistory"),
+
+  cancelQuery: () => ipcRenderer.invoke("companion:cancelQuery"),
+
+  confirmAction: (approved: boolean) =>
+    ipcRenderer.invoke("companion:confirmAction", approved),
+
   openExternal: (url: string) => {
     ipcRenderer.invoke("shell:openExternal", url);
   },
 
-  // Window controls
   minimizeWindow: () => ipcRenderer.invoke("window:minimize"),
   closeWindow: () => ipcRenderer.invoke("window:close"),
 });

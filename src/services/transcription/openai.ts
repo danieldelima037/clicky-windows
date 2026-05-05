@@ -1,4 +1,6 @@
 import { TranscriptionProvider } from "./interface";
+import { pcmToWav } from "./wav";
+import { fetchWithTimeout } from "../ai-provider";
 
 /**
  * OpenAI Whisper API transcription.
@@ -29,7 +31,7 @@ export class OpenAITranscriptionProvider implements TranscriptionProvider {
     this.audioChunks = [];
 
     // Build WAV header for raw PCM16 mono 16kHz
-    const wavBuffer = this.pcmToWav(audioBuffer, 16000, 1, 16);
+    const wavBuffer = pcmToWav(audioBuffer, 16000);
 
     // Create form data manually for Node.js fetch
     const boundary = "----ClickyBoundary" + Date.now();
@@ -55,7 +57,7 @@ export class OpenAITranscriptionProvider implements TranscriptionProvider {
       Buffer.from("\r\n" + modelPart),
     ]);
 
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       "https://api.openai.com/v1/audio/transcriptions",
       {
         method: "POST",
@@ -83,33 +85,5 @@ export class OpenAITranscriptionProvider implements TranscriptionProvider {
 
   onFinalTranscript(callback: (text: string) => void): void {
     this.finalCallback = callback;
-  }
-
-  private pcmToWav(
-    pcm: Buffer,
-    sampleRate: number,
-    channels: number,
-    bitsPerSample: number
-  ): Buffer {
-    const byteRate = (sampleRate * channels * bitsPerSample) / 8;
-    const blockAlign = (channels * bitsPerSample) / 8;
-    const dataSize = pcm.length;
-    const header = Buffer.alloc(44);
-
-    header.write("RIFF", 0);
-    header.writeUInt32LE(36 + dataSize, 4);
-    header.write("WAVE", 8);
-    header.write("fmt ", 12);
-    header.writeUInt32LE(16, 16);
-    header.writeUInt16LE(1, 20); // PCM
-    header.writeUInt16LE(channels, 22);
-    header.writeUInt32LE(sampleRate, 24);
-    header.writeUInt32LE(byteRate, 28);
-    header.writeUInt16LE(blockAlign, 32);
-    header.writeUInt16LE(bitsPerSample, 34);
-    header.write("data", 36);
-    header.writeUInt32LE(dataSize, 40);
-
-    return Buffer.concat([header, pcm]);
   }
 }

@@ -12,6 +12,7 @@ let overlayWindows: BrowserWindow[] = [];
 
 const settings = new SettingsStore();
 let companion: CompanionManager;
+let audioCapture: AudioCapture;
 let cursorBuddyInterval: ReturnType<typeof setInterval> | null = null;
 
 function startCursorBuddy(): void {
@@ -19,9 +20,6 @@ function startCursorBuddy(): void {
   cursorBuddyInterval = setInterval(() => {
     if (overlayWindows.length === 0) return;
     const point = screen.getCursorScreenPoint();
-    // Route the buddy to the overlay for the display that contains the
-    // cursor; hide it on every other overlay. Coordinates are translated
-    // into that display's local CSS space (matches how POINT tags work).
     const target = screen.getDisplayNearestPoint(point);
     const displays = screen.getAllDisplays();
     const targetIndex = displays.findIndex((d) => d.id === target.id);
@@ -36,7 +34,7 @@ function startCursorBuddy(): void {
         win.webContents.send("overlay:cursor-buddy-visible", false);
       }
     }
-  }, 16);
+  }, 33);
 }
 
 function stopCursorBuddy(): void {
@@ -51,12 +49,6 @@ function stopCursorBuddy(): void {
   }
 }
 
-/**
- * Create one transparent click-through overlay window per display. The
- * array index matches `screen.getAllDisplays()` order, which is also the
- * order used by `ScreenCapture.captureAllScreens`, so a POINT tag's
- * `screen` field directly indexes into this array.
- */
 function createOverlayWindows(): BrowserWindow[] {
   return screen.getAllDisplays().map((display, i) => createOverlayWindow(display, i));
 }
@@ -92,30 +84,22 @@ function createOverlayWindow(display: Electron.Display, displayIndex: number): B
   win.setAlwaysOnTop(true, "screen-saver");
   win.loadFile(path.join(__dirname, "..", "..", "src", "renderer", "overlay", "index.html"));
 
-  // Forward overlay renderer console messages to main process so we can see
-  // them in PowerShell during dev. Prefixed with the display index for
-  // multi-monitor clarity.
   win.webContents.on("console-message", (_event, level, message, line) => {
     console.log(`[overlay${displayIndex}:${level}] ${message} (line ${line})`);
   });
 
-  // Open DevTools only for the primary display in dev mode — opening one
-  // detached DevTools window per monitor is too noisy.
   if (!app.isPackaged && displayIndex === 0) {
     win.webContents.once("did-finish-load", () => {
       win.webContents.openDevTools({ mode: "detach" });
     });
   }
 
-  // Show after load is ready (transparent + show:false avoids a black flash on Windows)
   win.once("ready-to-show", () => {
     win.showInactive();
     win.setAlwaysOnTop(true, "screen-saver");
     console.log(`[Clicky] Overlay ${displayIndex} shown:`, win.getBounds(), "isVisible:", win.isVisible());
   });
 
-  // Fallback: if ready-to-show never fires (transparent windows can be tricky),
-  // force-show after the load completes.
   win.webContents.once("did-finish-load", () => {
     if (!win.isVisible()) {
       win.showInactive();
@@ -144,16 +128,16 @@ function createChatWindow(): BrowserWindow {
   });
 
   win.loadFile(path.join(__dirname, "..", "..", "src", "renderer", "chat", "index.html"));
+  win.webContents.on("console-message", (_event, level, message, line) => {
+    console.log(`[chat:${level}] ${message} (line ${line})`);
+  });
   win.once("ready-to-show", () => {
     win.show();
-    // setAlwaysOnTop after show — more reliable on Windows than constructor option
     if (settings.get("alwaysOnTop")) {
       win.setAlwaysOnTop(true, "screen-saver");
-      // Re-apply after a short delay — Windows can reset it
       setTimeout(() => {
         if (!win.isDestroyed()) {
           win.setAlwaysOnTop(true, "screen-saver");
-          // alwaysOnTop applied
         }
       }, 500);
     }
@@ -175,12 +159,14 @@ function createSettingsWindow(): BrowserWindow {
   });
 
   win.loadFile(path.join(__dirname, "..", "..", "src", "renderer", "settings", "index.html"));
+  win.webContents.on("console-message", (_event, level, message, line) => {
+    console.log(`[settings:${level}] ${message} (line ${line})`);
+  });
   win.once("ready-to-show", () => win.show());
   return win;
 }
 
 function setupIPC(): void {
-  // Chat query — captures screen + sends to Claude
   ipcMain.handle("chat:query", async (_event, text: string) => {
     try {
       const response = await companion.processQuery(text);
@@ -191,31 +177,50 @@ function setupIPC(): void {
     }
   });
 
-  // Settings
+  ipcMain.handle("companion:clearHistory", () => {
+    companion.clearHistory();
+  });
+
+  ipcMain.handle("companion:cancelQuery", () => {
+    companion.cancelQuery();
+  });
+
   ipcMain.handle("settings:getAll", () => settings.getAll());
   ipcMain.handle("settings:set", (_event, key: string, value: unknown) => {
-    settings.set(key as keyof ReturnType<typeof settings.getAll>, value as never);
+    const allSettings = settings.getAll();
+    const typedKey = key as keyof typeof allSettings;
+    if (typedKey in allSettings) {
+      settings.set(typedKey, value as typeof allSettings[typeof typedKey]);
+    }
 
-    // Apply alwaysOnTop immediately
     if (key === "alwaysOnTop" && chatWindow && !chatWindow.isDestroyed()) {
       chatWindow.setAlwaysOnTop(!!value, "screen-saver");
     }
 
-    // Toggle cursor buddy
     if (key === "cursorBuddyEnabled") {
       if (value) startCursorBuddy();
       else stopCursorBuddy();
     }
   });
 
-  // Open URL in default browser
-  ipcMain.handle("shell:openExternal", (_event, url: string) => {
-    if (url.startsWith("https://")) {
-      shell.openExternal(url);
+  ipcMain.handle("settings:batchSet", (_event, pairs: Array<[string, unknown]>) => {
+    const allSettings = settings.getAll();
+    for (const [key, value] of pairs) {
+      const typedKey = key as keyof typeof allSettings;
+      if (typedKey in allSettings) {
+        settings.set(typedKey, value as typeof allSettings[typeof typedKey]);
+      }
     }
   });
 
-  // Window controls
+  ipcMain.handle("shell:openExternal", (_event, url: string) => {
+    if (url.startsWith("https://")) {
+      shell.openExternal(url);
+    } else {
+      console.warn(`[Clicky] Blocked non-HTTPS openExternal: ${url}`);
+    }
+  });
+
   ipcMain.handle("window:minimize", (event) => {
     BrowserWindow.fromWebContents(event.sender)?.minimize();
   });
@@ -225,14 +230,18 @@ function setupIPC(): void {
   });
 }
 
+function recreateOverlays(): void {
+  overlayWindows.forEach((w) => { if (!w.isDestroyed()) w.close(); });
+  overlayWindows = createOverlayWindows();
+  companion.updateOverlayWindows(overlayWindows);
+}
+
 app.whenReady().then(() => {
-  // Hide from taskbar — tray only
   app.dock?.hide?.();
 
   overlayWindows = createOverlayWindows();
   companion = new CompanionManager(settings, overlayWindows);
-
-  const audioCapture = new AudioCapture(settings);
+  audioCapture = new AudioCapture(settings);
   audioCapture.setCompanion(companion);
 
   setupIPC();
@@ -258,22 +267,34 @@ app.whenReady().then(() => {
         });
       }
     },
+    onClearHistory: () => {
+      companion.clearHistory();
+      console.log("[Clicky] Conversation history cleared");
+    },
     onQuit: () => app.quit(),
   });
 
   const hotkeyManager = new HotkeyManager(settings);
   hotkeyManager.register();
 
-  // Open chat on launch so there's something visible
   chatWindow = createChatWindow();
   chatWindow.on("closed", () => {
     chatWindow = null;
   });
 
-  // Start cursor buddy if enabled
   if (settings.get("cursorBuddyEnabled")) {
     startCursorBuddy();
   }
+
+  screen.on("display-added", () => {
+    console.log("[Clicky] Display added — recreating overlay windows");
+    recreateOverlays();
+  });
+
+  screen.on("display-removed", () => {
+    console.log("[Clicky] Display removed — recreating overlay windows");
+    recreateOverlays();
+  });
 
   console.log("Clicky Windows started — running in system tray");
 });
@@ -282,7 +303,5 @@ app.on("will-quit", () => {
   globalShortcut.unregisterAll();
 });
 
-// Prevent app from closing when all windows are closed (tray app)
 app.on("window-all-closed", () => {
-  // Do nothing — keep app running in tray
 });

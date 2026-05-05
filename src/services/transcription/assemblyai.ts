@@ -1,5 +1,6 @@
 import { TranscriptionProvider } from "./interface";
 import WebSocket from "ws";
+import { fetchWithTimeout } from "../ai-provider";
 
 /**
  * AssemblyAI real-time streaming transcription via WebSocket.
@@ -18,7 +19,7 @@ export class AssemblyAIProvider implements TranscriptionProvider {
 
   async start(): Promise<void> {
     // Get temporary auth token
-    const tokenResponse = await fetch(
+    const tokenResponse = await fetchWithTimeout(
       "https://api.assemblyai.com/v2/realtime/token",
       {
         method: "POST",
