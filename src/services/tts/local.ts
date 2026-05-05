@@ -1,34 +1,33 @@
 import { TTSProvider } from "./interface";
 import { exec } from "child_process";
 
-function buildEncodedCommand(psScript: string): string {
-  const encoded = Buffer.from(psScript, "utf16le").toString("base64");
-  return `powershell -EncodedCommand ${encoded}`;
-}
-
 export class LocalTTS implements TTSProvider {
   private currentProcess: ReturnType<typeof exec> | null = null;
 
   async speak(text: string): Promise<void> {
     this.stop();
 
-    const escaped = text.replace(/'/g, "''").replace(/"/g, '`"');
-    const psScript = `Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.Speak('${escaped}')`;
-    const cmd = buildEncodedCommand(psScript);
+    // Using powershell -Command - allows reading from stdin via [Console]::In.ReadToEnd()
+    const psScript = `
+      Add-Type -AssemblyName System.Speech;
+      $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer;
+      $text = [Console]::In.ReadToEnd();
+      if ($text) { $synth.Speak($text) }
+    `.replace(/\n/g, " ").trim();
 
     return new Promise((resolve, reject) => {
-      this.currentProcess = exec(cmd, (error) => {
-        this.currentProcess = null;
-        if (error) {
-          if (error.killed) {
-            resolve();
-          } else {
-            reject(error);
-          }
+      const child = exec(`powershell -Command "${psScript}"`, (error) => {
+        if (error && !error.killed) {
+          reject(error);
         } else {
           resolve();
         }
       });
+      this.currentProcess = child;
+      if (child.stdin) {
+        child.stdin.write(text);
+        child.stdin.end();
+      }
     });
   }
 

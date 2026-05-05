@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -780,6 +780,201 @@
       width: 14px;
       height: 14px;
       opacity: 0.5;
+    @keyframes statusIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .status-dot-anim {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: statusPulse 1.2s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .tts-btn {
+      height: 36px;
+      padding: 0 10px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      font-family: inherit;
+    }
+
+    .tts-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .tts-btn.active-local {
+      background: rgba(52, 211, 153, 0.1);
+      border-color: rgba(52, 211, 153, 0.4);
+      color: var(--success);
+    }
+
+    .tts-btn.active-cloud {
+      background: var(--accent-glow);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    #send svg { width: 16px; height: 16px; }
+
+    /* ── Welcome state ── */
+    .welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .welcome .icon {
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 4px;
+      filter: drop-shadow(0 4px 20px rgba(99, 140, 255, 0.4));
+    }
+
+    .welcome .icon svg {
+      width: 48px;
+      height: 48px;
+    }
+
+    .welcome h2 {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .welcome p {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      max-width: 260px;
+    }
+
+    .welcome .shortcuts {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .welcome .shortcuts kbd {
+      padding: 3px 8px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 10px;
+      font-family: inherit;
+      color: var(--text-secondary);
+    }
+
+    /* ── Help Links ── */
+    .help-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+      justify-content: center;
+    }
+
+    .help-link {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 11px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .help-link:hover {
+      background: var(--bg-hover);
+      border-color: rgba(255, 255, 255, 0.12);
+      color: var(--text-primary);
+    }
+
+    .help-link svg {
+      width: 12px;
+      height: 12px;
+      opacity: 0.5;
+      flex-shrink: 0;
+    }
+
+    .help-link:hover svg { opacity: 0.8; }
+
+    /* ── Help Dropdown ── */
+    #help-menu {
+      position: absolute;
+      top: 48px;
+      right: 12px;
+      background: #161620;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 6px;
+      min-width: 200px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      display: none;
+      animation: menuIn 0.15s ease;
+    }
+
+    #help-menu.visible { display: block; }
+
+    @keyframes menuIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #help-menu a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 12px;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+
+    #help-menu a:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    #help-menu a svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0.5;
       flex-shrink: 0;
     }
 
@@ -998,7 +1193,7 @@
     <span id="status-text"></span>
   </div>
 
-  <!-- Input -->
+  <!-- Input Area -->
   <div id="input-area">
     <button id="tts-toggle" class="tts-btn" title="Voice: Off">
       <svg id="tts-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
@@ -1112,11 +1307,15 @@
         { value: 'gpt-5-nano', label: 'GPT-5 Nano (FREE!)' },
       ],
       together: [
-        { value: 'Qwen/Qwen2-VL-72B-Instruct', label: 'Qwen 2 VL 72B' },
+        { value: 'togethercomputer/Qwen2-VL-72B-Instruct', label: 'Qwen 2 VL 72B' },
         { value: 'meta-llama/Llama-3.2-90B-Vision-Instruct', label: 'LLaMA 3.2 90B Vision' },
+        { value: 'meta-llama/Llama-3.2-11B-Vision-Instruct', label: 'LLaMA 3.2 11B Vision' },
       ],
       fireworks: [
+        { value: 'accounts/fireworks/models/qwen2-vl-72b-instruct', label: 'Qwen 2 VL 72B (vision)' },
         { value: 'accounts/fireworks/models/kimi-k2p5', label: 'Kimi K2.5 (vision, SOTA)' },
+        { value: 'accounts/fireworks/models/llama-v3p2-11b-vision-instruct', label: 'LLaMA 3.2 11B Vision' },
+        { value: 'accounts/fireworks/models/llama-v3p2-90b-vision-instruct', label: 'LLaMA 3.2 90B Vision' },
       ],
       custom: [
         { value: '', label: '(enter model name)' },
@@ -1142,7 +1341,6 @@
     const saveKeysBtn = document.getElementById('save-keys');
     const savedMsg = document.getElementById('saved-msg');
     const setup = document.getElementById('setup');
-    const statusDot = document.getElementById('status-dot');
     const toggleSetupBtn = document.getElementById('toggle-setup');
 
     let isConfigured = false;
@@ -1171,14 +1369,21 @@
       // Set provider + model
       setupProvider.value = settings.aiProvider || 'anthropic';
       updateProviderUI();
-      if (settings.aiProvider === 'openai' && settings.openaiModel) {
-        setupModel.value = settings.openaiModel;
-      } else if (settings.aiProvider === 'openrouter' && settings.openrouterModel) {
-        setupModel.value = settings.openrouterModel;
-      } else if (settings.aiProvider === 'nvidia' && settings.nvidiaModel) {
-        setupModel.value = settings.nvidiaModel;
-      } else if (settings.claudeModel) {
-        setupModel.value = settings.claudeModel;
+
+      // Resolve which model setting to use
+      const provider = setupProvider.value;
+      const modelKeys = {
+        anthropic: 'claudeModel', openai: 'openaiModel', openrouter: 'openrouterModel',
+        nvidia: 'nvidiaModel', groq: 'groqModel', gemini: 'geminiModel',
+        deepseek: 'deepseekModel', ollama: 'ollamaModel', lmstudio: 'lmstudioModel',
+        opencodezen: 'opencodeZenModel', azure: 'azureModel', huggingface: 'huggingfaceModel',
+        together: 'togetherModel', cerebras: 'cerebrasModel', fireworks: 'fireworksModel',
+        deepinfra: 'deepinfraModel', baseten: 'basetenModel', venice: 'veniceModel',
+        nebius: 'nebiusModel', moonshot: 'moonshotModel', custom: 'customModel'
+      };
+      const modelKey = modelKeys[provider] || 'claudeModel';
+      if (settings[modelKey]) {
+        setupModel.value = settings[modelKey];
       }
 
       // Check if we have the required key for the chosen provider
@@ -1196,19 +1401,12 @@
     });
 
     // Toggle setup panel
-    toggleSetupBtn.addEventListener('click', () => {
+    toggleSetupBtn?.addEventListener('click', () => {
       setup.classList.toggle('hidden');
     });
 
     function setConfigured(configured) {
       isConfigured = configured;
-      statusDot.className = configured ? 'status connected' : 'status';
-
-      // Update titlebar to show active provider
-      const providerLabels = { anthropic: 'Claude', openai: 'OpenAI', openrouter: 'OpenRouter', nvidia: 'NVIDIA' };
-      const providerLabel = providerLabels[setupProvider.value] || setupProvider.value;
-      document.querySelector('#titlebar .title').textContent = 'Clicky · ' + providerLabel;
-
       if (configured) {
         setup.classList.add('hidden');
         input.focus();
@@ -1223,14 +1421,18 @@
       window.clicky.setSetting('aiProvider', provider);
 
       // Save model based on provider
-      if (provider === 'openai') {
-        window.clicky.setSetting('openaiModel', setupModel.value);
-      } else if (provider === 'openrouter') {
-        window.clicky.setSetting('openrouterModel', setupModel.value);
-      } else if (provider === 'nvidia') {
-        window.clicky.setSetting('nvidiaModel', setupModel.value);
-      } else {
-        window.clicky.setSetting('claudeModel', setupModel.value);
+      const modelKeys = {
+        anthropic: 'claudeModel', openai: 'openaiModel', openrouter: 'openrouterModel',
+        nvidia: 'nvidiaModel', groq: 'groqModel', gemini: 'geminiModel',
+        deepseek: 'deepseekModel', ollama: 'ollamaModel', lmstudio: 'lmstudioModel',
+        opencodezen: 'opencodeZenModel', azure: 'azureModel', huggingface: 'huggingfaceModel',
+        together: 'togetherModel', cerebras: 'cerebrasModel', fireworks: 'fireworksModel',
+        deepinfra: 'deepinfraModel', baseten: 'basetenModel', venice: 'veniceModel',
+        nebius: 'nebiusModel', moonshot: 'moonshotModel', custom: 'customModel'
+      };
+      const modelKey = modelKeys[provider];
+      if (modelKey) {
+        window.clicky.setSetting(modelKey, setupModel.value);
       }
 
       // Validate required key
@@ -1376,23 +1578,6 @@
       }
     });
 
-    // ── Pin (always on top) toggle ──
-    const pinBtn = document.getElementById('pin-btn');
-    let isPinned = false;
-
-    window.clicky.getSettings().then((s) => {
-      isPinned = !!s.alwaysOnTop;
-      pinBtn.style.color = isPinned ? 'var(--accent)' : '';
-      pinBtn.title = isPinned ? 'Unpin from top' : 'Pin on top';
-    });
-
-    pinBtn.addEventListener('click', () => {
-      isPinned = !isPinned;
-      window.clicky.setSetting('alwaysOnTop', isPinned);
-      pinBtn.style.color = isPinned ? 'var(--accent)' : '';
-      pinBtn.title = isPinned ? 'Unpin from top' : 'Pin on top';
-    });
-
     // ── Status bar ──
     const statusBar = document.getElementById('status-bar');
     const statusText = document.getElementById('status-text');
@@ -1451,11 +1636,6 @@
           const blob = new Blob(audioChunks, { type: 'audio/webm' });
           const webmBuffer = await blob.arrayBuffer();
 
-          // Decode webm/opus → raw PCM at 16 kHz mono Int16, so the
-          // main process can write a WAV file for whisper.cpp without
-          // shipping ffmpeg. Same buffer also works for OpenAI Whisper API.
-          // Main assumes raw 16-bit PCM, so if decode fails we must surface
-          // the error — sending webm would produce garbled audio.
           let arrayBuffer;
           try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
@@ -1473,7 +1653,6 @@
             addMessage('Voice error: could not decode audio (' + (decodeErr.message || decodeErr) + ')', 'system');
             hideStatus();
             micBtn.className = 'mic-btn';
-            micBtn.title = 'Push to talk (or Ctrl+Shift+Space)';
             return;
           }
 
@@ -1513,7 +1692,6 @@
 
           hideStatus();
           micBtn.className = 'mic-btn';
-          micBtn.title = 'Push to talk (or Ctrl+Shift+Space)';
         };
 
         mediaRecorder.start(250); // collect chunks every 250ms
@@ -1534,7 +1712,6 @@
       isRecording = false;
     }
 
-    // Click mic button to toggle
     micBtn.addEventListener('click', () => {
       if (isRecording) {
         stopRecording();
@@ -1543,8 +1720,8 @@
       }
     });
 
-    // Global hotkey (Ctrl+Alt+Space) triggers from main process
-    window.clicky.onRecordingChanged((recording) => {
+    // Global hotkey triggers from main process
+    window.clicky.onRecordingChanged?.((recording) => {
       if (recording && !isRecording) {
         startRecording();
       } else if (!recording && isRecording) {
@@ -1552,14 +1729,12 @@
       }
     });
 
-    // TTS 3-state toggle: off → windows → openai cloud → off
+    // TTS toggle
     const ttsToggle = document.getElementById('tts-toggle');
     const ttsIcon = document.getElementById('tts-icon');
     const ttsLabel = document.getElementById('tts-label');
-    // States: 'off', 'local', 'openai'
     let ttsState = 'off';
 
-    // Load saved TTS state
     window.clicky.getSettings().then((s) => {
       if (s.ttsEnabled && s.ttsProvider === 'openai') {
         ttsState = 'openai';
@@ -1610,18 +1785,14 @@
     });
 
     // Window controls
-    document.getElementById('btn-minimize').addEventListener('click', () => {
-      window.clicky.minimizeWindow();
-    });
-    document.getElementById('btn-close').addEventListener('click', () => {
-      window.clicky.closeWindow();
-    });
+    document.getElementById('btn-minimize')?.addEventListener('click', () => window.clicky.minimizeWindow());
+    document.getElementById('btn-close')?.addEventListener('click', () => window.clicky.closeWindow());
 
     // Help menu
     const helpBtn = document.getElementById('help-btn');
     const helpMenu = document.getElementById('help-menu');
 
-    helpBtn.addEventListener('click', (e) => {
+    helpBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
       helpMenu.classList.toggle('visible');
     });
@@ -1630,11 +1801,9 @@
       helpMenu.classList.remove('visible');
     });
 
-    helpMenu.addEventListener('click', (e) => {
-      e.stopPropagation();
-    });
+    helpMenu.addEventListener('click', (e) => e.stopPropagation());
 
-    // Open all data-href links in default browser
+    // Open links
     document.querySelectorAll('[data-href]').forEach((el) => {
       el.addEventListener('click', (e) => {
         e.preventDefault();

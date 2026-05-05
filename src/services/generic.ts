@@ -17,7 +17,7 @@ const PROVIDER_CONFIGS: Record<string, { baseUrl: string; authHeader: string }> 
     authHeader: "Authorization",
   },
   together: {
-    baseUrl: "https://api.together.ai/v1",
+    baseUrl: "https://api.together.xyz/v1",
     authHeader: "Bearer",
   },
   cerebras: {
@@ -25,23 +25,23 @@ const PROVIDER_CONFIGS: Record<string, { baseUrl: string; authHeader: string }> 
     authHeader: "Bearer",
   },
   fireworks: {
-    baseUrl: "https://api.fireworks.ai/v1",
+    baseUrl: "https://api.fireworks.ai/inference/v1",
     authHeader: "Bearer",
   },
   deepinfra: {
-    baseUrl: "https://api.deepinfra.com/v1",
+    baseUrl: "https://api.deepinfra.com/v1/openai",
     authHeader: "Bearer",
   },
   baseten: {
-    baseUrl: "https://api.baseten.co/v1",
+    baseUrl: "https://inference.baseten.co/v1",
     authHeader: "Bearer",
   },
   venice: {
-    baseUrl: "https://api.venice.ai/v1",
+    baseUrl: "https://api.venice.ai/api/v1",
     authHeader: "Bearer",
   },
   nebius: {
-    baseUrl: "https://api.nebius.ai/v1",
+    baseUrl: "https://api.studio.nebius.ai/v1",
     authHeader: "Bearer",
   },
   moonshot: {

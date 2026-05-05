@@ -61,7 +61,12 @@ export class CompanionManager {
   }
 
   private stripTags(text: string): string {
-    return text.replace(TAG_REGEX, "").trim();
+    // Remove thought/reasoning blocks first
+    let clean = text.replace(/<(thought|thinking|reasoning)>[\s\S]*?<\/\1>/gi, "");
+    // Remove plain "Thinking..." blocks if model uses them without tags
+    clean = clean.replace(/Thinking:?[\s\S]*?(\n\n|$)/gi, "");
+    // Remove Clicky [TAGS]
+    return clean.replace(TAG_REGEX, "").trim();
   }
 
   private async enqueueQuery(fn: () => Promise<string>): Promise<string> {
